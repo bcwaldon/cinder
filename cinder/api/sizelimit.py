@@ -45,9 +45,9 @@ class RequestBodySizeLimiter(wsgi.Middleware):
 
     @webob.dec.wsgify(RequestClass=wsgi.Request)
     def __call__(self, req):
-        if (req.content_length > FLAGS.osapi_max_request_body_size
-            or len(req.body) > FLAGS.osapi_max_request_body_size):
-            msg = _("Request is too large.")
-            raise webob.exc.HTTPBadRequest(explanation=msg)
-        else:
-            return self.application
+        #if (req.content_length > FLAGS.osapi_max_request_body_size
+        #    or len(req.body) > FLAGS.osapi_max_request_body_size):
+            #    msg = _("Request is too large.")
+            #raise webob.exc.HTTPBadRequest(explanation=msg)
+            #else:
+        return self.application

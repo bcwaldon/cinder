@@ -579,6 +579,24 @@ class ISCSIDriver(VolumeDriver):
             with utils.file_open(volume_path) as volume_file:
                 image_service.update(context, image_id, {}, volume_file)
 
+    def read_volume(self, context, volume):
+        volume_path = self.local_path(volume)
+        with utils.temporary_chown(volume_path):
+            with utils.file_open(volume_path) as volume_file:
+                chunk = volume_file.read(65536)
+                while chunk:
+                    yield chunk
+                    chunk = volume_file.read(65536)
+
+    def write_volume(self, context, volume, data):
+        volume_path = self.local_path(volume)
+        with utils.temporary_chown(volume_path):
+            with utils.file_open(volume_path, 'w') as volume_file:
+                chunk = data.read(65536)
+                while chunk:
+                    volume_file.write(chunk)
+                    chunk = data.read(65536)
+
 
 class FakeISCSIDriver(ISCSIDriver):
     """Logs calls instead of executing."""

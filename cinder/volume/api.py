@@ -30,6 +30,7 @@ from cinder.image import glance
 from cinder.openstack.common import log as logging
 from cinder.openstack.common import rpc
 from cinder.openstack.common import timeutils
+from cinder.openstack.common import importutils
 import cinder.policy
 from cinder import quota
 
@@ -41,6 +42,7 @@ volume_host_opt = cfg.BoolOpt('snapshot_same_host',
 FLAGS = flags.FLAGS
 FLAGS.register_opt(volume_host_opt)
 flags.DECLARE('storage_availability_zone', 'cinder.volume.manager')
+flags.DECLARE('volume_driver', 'cinder.volume.manager')
 
 LOG = logging.getLogger(__name__)
 GB = 1048576 * 1024
@@ -75,6 +77,7 @@ class API(base.Base):
     """API for interacting with the volume manager."""
 
     def __init__(self, db_driver=None, image_service=None):
+        self.driver = importutils.import_object(FLAGS.volume_driver)
         self.image_service = (image_service or
                               glance.get_default_image_service())
         super(API, self).__init__(db_driver)
@@ -532,3 +535,13 @@ class API(base.Base):
                "image_name": recv_metadata.get('name', None)
         }
         return response
+
+    def read_volume(self, context, volume):
+        return self.driver.read_volume(context, volume)
+
+    def write_volume(self, context, volume, data):
+        """Write provided data onto volume
+
+        :param data: file-like object
+        """
+        self.driver.write_volume(context, volume, data)

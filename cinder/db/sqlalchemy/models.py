@@ -77,11 +77,17 @@ class CinderBase(object):
         return getattr(self, key, default)
 
     def __iter__(self):
-        self._i = iter(object_mapper(self).columns)
+        columns = dict(object_mapper(self).columns).keys()
+        # NOTE(russellb): Allow models to specify other keys that can be looked
+        # up, beyond the actual db columns.  An example would be the 'name'
+        # property for an Instance.
+        if hasattr(self, '_extra_keys'):
+            columns.extend(self._extra_keys())
+        self._i = iter(columns)
         return self
 
     def next(self):
-        n = self._i.next().name
+        n = self._i.next()
         return n, getattr(self, n)
 
     def update(self, values):
@@ -129,6 +135,9 @@ class Volume(BASE, CinderBase):
     @property
     def name(self):
         return FLAGS.volume_name_template % self.id
+
+    def _extra_keys(self):
+        return ['name']
 
     ec2_id = Column(Integer)
     user_id = Column(String(255))
