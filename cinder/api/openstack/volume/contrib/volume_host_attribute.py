@@ -41,9 +41,10 @@ class VolumeHostAttributeController(wsgi.Controller):
     @wsgi.extends
     def show(self, req, resp_obj, id):
         context = req.environ['cinder.context']
+        print context.is_admin
         if authorize(context):
-            resp_obj.attach(xml=VolumeHostAttributeTemplate())
-            self._add_volume_host_attribute(context, resp_obj.obj['volume'])
+	    resp_obj.attach(xml=VolumeHostAttributeTemplate())
+	    self._add_volume_host_attribute(context, resp_obj.obj['volume'])
 
     @wsgi.extends
     def detail(self, req, resp_obj):
