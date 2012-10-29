@@ -15,6 +15,7 @@
 import json
 import datetime
 
+from lxml import etree
 import webob
 
 from cinder import context
@@ -104,3 +105,27 @@ class VolumeHostAttributeTest(test.TestCase):
         res = req.get_response(app())
         vol = json.loads(res.body)['volumes']
         self.assertFalse('os-vol-host-attr:host' in vol[0])
+
+    def test_get_volume_xml(self):
+        ctx = context.RequestContext('admin', 'fake', True)
+        req = webob.Request.blank('/v1/fake/volumes/%s' % self.UUID)
+        req.method = 'GET'
+        req.accept = 'application/xml'
+        req.environ['cinder.context'] = ctx
+        res = req.get_response(app())
+        vol = etree.XML(res.body)
+        host_key = ('{http://docs.openstack.org/volume/ext/'
+                    'volume_host_attribute/api/v1}host')
+        self.assertEqual(vol.get(host_key), 'host001')
+
+    def test_list_volumes_detail_xml(self):
+        ctx = context.RequestContext('admin', 'fake', True)
+        req = webob.Request.blank('/v1/fake/volumes/detail')
+        req.method = 'GET'
+        req.accept = 'application/xml'
+        req.environ['cinder.context'] = ctx
+        res = req.get_response(app())
+        vol = list(etree.XML(res.body))[0]
+        host_key = ('{http://docs.openstack.org/volume/ext/'
+                    'volume_host_attribute/api/v1}host')
+        self.assertEqual(vol.get(host_key), 'host001')
