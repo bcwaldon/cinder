@@ -21,73 +21,73 @@ from cinder import volume
 
 LOG = logging.getLogger(__name__)
 authorize = extensions.soft_extension_authorizer('volume',
-                                                 'volume_project_attribute')
+                                                 'volume_tenant_attribute')
 
 
-class VolumeProjectAttributeController(wsgi.Controller):
+class VolumeTenantAttributeController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
-        super(VolumeProjectAttributeController, self).__init__(*args, **kwargs)
+        super(VolumeTenantAttributeController, self).__init__(*args, **kwargs)
         self.volume_api = volume.API()
 
-    def _add_volume_project_attribute(self, context, resp_volume):
+    def _add_volume_tenant_attribute(self, context, resp_volume):
         try:
             db_volume = self.volume_api.get(context, resp_volume['id'])
         except Exception:
             return
         else:
-            key = "%s:project_id" % Volume_project_attribute.alias
+            key = "%s:tenant_id" % Volume_tenant_attribute.alias
             resp_volume[key] = db_volume['project_id']
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
         context = req.environ['cinder.context']
         if authorize(context):
-            resp_obj.attach(xml=VolumeProjectAttributeTemplate())
-            self._add_volume_project_attribute(context, resp_obj.obj['volume'])
+            resp_obj.attach(xml=VolumeTenantAttributeTemplate())
+            self._add_volume_tenant_attribute(context, resp_obj.obj['volume'])
 
     @wsgi.extends
     def detail(self, req, resp_obj):
         context = req.environ['cinder.context']
         if authorize(context):
-            resp_obj.attach(xml=VolumeListProjectAttributeTemplate())
+            resp_obj.attach(xml=VolumeListTenantAttributeTemplate())
             for volume in list(resp_obj.obj['volumes']):
-                self._add_volume_project_attribute(context, volume)
+                self._add_volume_tenant_attribute(context, volume)
 
 
-class Volume_project_attribute(extensions.ExtensionDescriptor):
-    """Expose project_id as an attribute of a volume."""
+class Volume_tenant_attribute(extensions.ExtensionDescriptor):
+    """Expose the internal project_id as an attribute of a volume."""
 
-    name = "VolumeProjectAttribute"
-    alias = "os-vol-project-attr"
+    name = "VolumeTenantAttribute"
+    alias = "os-vol-tenant-attr"
     namespace = ("http://docs.openstack.org/volume/ext/"
-                 "volume_project_attribute/api/v1")
+                 "volume_tenant_attribute/api/v1")
     updated = "2011-11-03T00:00:00+00:00"
 
     def get_controller_extensions(self):
-        controller = VolumeProjectAttributeController()
+        controller = VolumeTenantAttributeController()
         extension = extensions.ControllerExtension(self, 'volumes', controller)
         return [extension]
 
 
 def make_volume(elem):
-    elem.set('{%s}project_id' % Volume_project_attribute.namespace,
-             '%s:project_id' % Volume_project_attribute.alias)
+    elem.set('{%s}tenant_id' % Volume_tenant_attribute.namespace,
+             '%s:tenant_id' % Volume_tenant_attribute.alias)
 
 
-class VolumeProjectAttributeTemplate(xmlutil.TemplateBuilder):
+class VolumeTenantAttributeTemplate(xmlutil.TemplateBuilder):
     def construct(self):
         root = xmlutil.TemplateElement('volume', selector='volume')
         make_volume(root)
-        alias = Volume_project_attribute.alias
-        namespace = Volume_project_attribute.namespace
+        alias = Volume_tenant_attribute.alias
+        namespace = Volume_tenant_attribute.namespace
         return xmlutil.SlaveTemplate(root, 1, nsmap={alias: namespace})
 
 
-class VolumeListProjectAttributeTemplate(xmlutil.TemplateBuilder):
+class VolumeListTenantAttributeTemplate(xmlutil.TemplateBuilder):
     def construct(self):
         root = xmlutil.TemplateElement('volumes')
         elem = xmlutil.SubTemplateElement(root, 'volume', selector='volumes')
         make_volume(elem)
-        alias = Volume_project_attribute.alias
-        namespace = Volume_project_attribute.namespace
+        alias = Volume_tenant_attribute.alias
+        namespace = Volume_tenant_attribute.namespace
         return xmlutil.SlaveTemplate(root, 1, nsmap={alias: namespace})

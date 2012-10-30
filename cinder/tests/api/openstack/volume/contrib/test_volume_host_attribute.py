@@ -38,6 +38,7 @@ def fake_volume_get(*args, **kwargs):
         'display_description': 'Just another volume!',
         'volume_type_id': None,
         'snapshot_id': None,
+        'project_id': 'fake',
     }
 
 
